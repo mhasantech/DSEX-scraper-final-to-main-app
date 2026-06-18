@@ -8,7 +8,6 @@ on:
 
 jobs:
   scrape_and_sync:
-    # এখানে পরিবর্তন করে ubuntu-22.04 দেওয়া হয়েছে যেন ডিপেন্ডেন্সি ইরর না আসে
     runs-on: ubuntu-22.04
 
     steps:
@@ -26,8 +25,9 @@ jobs:
         pip install -r requirements.txt
 
     - name: Ensure Playwright Browsers are Installed
+      # এখানে --with-deps কেটে দিয়ে শুধু chromium ইনস্টল করার কমান্ড দেওয়া হয়েছে
       run: |
-        python -m playwright install chromium --with-deps
+        python -m playwright install chromium
 
     - name: Run Scraper
       env:
