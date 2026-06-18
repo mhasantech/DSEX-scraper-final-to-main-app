@@ -34,17 +34,14 @@ def scrape_dsex():
         try:
             page.goto("https://www.dsebd.org/", wait_until="domcontentloaded")
             
-            # ডিএসই-র লেটেস্ট সাইট স্ট্রাকচার অনুযায়ী DSEX ভ্যালু খোঁজার আরও সহজ ও নির্ভুল সিলেক্টর
-            # এটি সরাসরি টেবিলের ভেতরের শক্তিশালী বা বোল্ড করা টেক্সটগুলো চেক করবে
-            page.wait_for_selector("text=DSEX", timeout=20000)
+            # একাধিক এলিমেন্টের ঝামেলা এড়াতে সুনির্দিষ্ট টেবিল ও ক্লাস টার্গেট করা হয়েছে
+            # ডিএসই-র লেটেস্ট হোমপেজের "Latest Share Price" টেবিলের DSEX রো সিলেক্ট করা হচ্ছে
+            target_selector = "table.table-striped >> text='DSEX'"
+            page.wait_for_selector(target_selector, timeout=25000)
             
-            # নিখুঁত লোকেশন টার্গেট করার জন্য অল্টারনেটিভ কুয়েরি
-            dsex_value_text = page.locator("//td[normalize-space()='DSEX']/following-sibling::td[1]").inner_text()
+            # নিখুঁতভাবে শুধু ওই টেবিলের ডানপাশের ভ্যালুটি রিড করার জন্য শক্তিশালী XPath
+            dsex_value_text = page.locator("//table[contains(@class,'table')]//td[normalize-space()='DSEX']/following-sibling::td[1]").inner_text()
             
-            # যদি প্রথম উপায়ে না পায়, তবে সাধারণ টেক্সট ম্যাচ ট্রাই করবে
-            if not dsex_value_text:
-                dsex_value_text = page.locator("b:has-text('DSEX') >> xpath=../following-sibling::td[1]").inner_text()
-
             dsex_value = float(dsex_value_text.replace(',', '').strip())
             print(f"Successfully scraped DSEX Index: {dsex_value}")
             browser.close()
