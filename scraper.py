@@ -21,7 +21,7 @@ if not firebase_admin._apps:
         'databaseURL': FIREBASE_DB_URL
     })
 
-def scrape_dsex():
+def scrape_dsex_recent():
     print("Launching browser...")
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -31,30 +31,32 @@ def scrape_dsex():
         page = context.new_page()
         page.set_default_timeout(60000)
         
-        print("Navigating to DSE website...")
+        # নতুন নির্দিষ্ট লিংকে নেভিগেট করা
+        print("Navigating to DSE Recent Market Information page...")
         try:
-            page.goto("https://www.dsebd.org/", wait_until="domcontentloaded")
+            page.goto("https://www.dsebd.org/recent_market_information.php", wait_until="domcontentloaded")
             
-            # পেজের প্রথম মূল টেবিলটির লোড হওয়া পর্যন্ত অপেক্ষা করা
-            page.wait_for_selector("table", timeout=30000)
-            time.sleep(3) # ডেটা রেন্ডার হওয়ার জন্য ছোট বিরতি
+            # টেবিলটি লোড হওয়ার জন্য ৩ সেকেন্ড অপেক্ষা
+            print("Waiting for table to render...")
+            time.sleep(3)
             
-            # প্রথম টেবিলের (index 0) ভেতরের DSEX লেখার ঠিক পরের td (ভ্যালু)-কে টার্গেট করা
-            # এই XPath শুধুমাত্র প্রথম টেবিলে থাকা DSEX-এর মানটিই নেবে
-            first_table_dsex_xpath = "(//table)[1]//td[normalize-space()='DSEX']/following-sibling::td[1]"
+            # Recent Market Information টেবিলের প্রথম সারির DSEX ভ্যালু টার্গেট করার সুনির্দিষ্ট XPath
+            # এটি প্রথম টেবিলের ভেতরের প্রথম 'DSEX' লেখার ঠিক ডানপাশের td (ভ্যালু)-টি নেবে
+            dsex_xpath = "(//table)[1]//td[normalize-space()='DSEX']/following-sibling::td[1]"
             
-            page.wait_for_selector(first_table_dsex_xpath, state="visible", timeout=20000)
+            page.wait_for_selector(dsex_xpath, state="visible", timeout=25000)
             
-            dsex_value_text = page.locator(first_table_dsex_xpath).inner_text()
-            print(f"Raw text found in first table: {dsex_value_text}")
+            dsex_value_text = page.locator(dsex_xpath).inner_text()
+            print(f"Raw text found in Recent Market table: {dsex_value_text}")
             
+            # কমা সরিয়ে সংখ্যায় (Float) রূপান্তর
             dsex_value = float(dsex_value_text.replace(',', '').strip())
-            print(f"Successfully scraped DSEX Index from first table: {dsex_value}")
+            print(f"Successfully scraped DSEX Index: {dsex_value}")
             browser.close()
             return dsex_value
             
         except Exception as e:
-            print(f"Scraping failed to find DSEX in first table: {e}")
+            print(f"Scraping failed to find DSEX on recent market page: {e}")
             browser.close()
             return None
 
@@ -66,7 +68,7 @@ def save_to_firebase(value):
     today_str = datetime.now().strftime("%Y-%m-%d")
     timestamp_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
-    print("Connecting to Firebase...")
+    print("Connecting to Firebase and saving data...")
     ref = db.reference(f'dsex_history/{today_str}')
     data = {
         "index_value": value,
@@ -76,5 +78,5 @@ def save_to_firebase(value):
     print("Data successfully saved to Firebase!")
 
 if __name__ == "__main__":
-    dsex_val = scrape_dsex()
+    dsex_val = scrape_dsex_recent()
     save_to_firebase(dsex_val)
