@@ -8,7 +8,8 @@ on:
 
 jobs:
   scrape_and_sync:
-    runs-on: ubuntu-latest
+    # এখানে পরিবর্তন করে ubuntu-22.04 দেওয়া হয়েছে যেন ডিপেন্ডেন্সি ইরর না আসে
+    runs-on: ubuntu-22.04
 
     steps:
     - name: Checkout repository
