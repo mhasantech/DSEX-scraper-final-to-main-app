@@ -1,5 +1,6 @@
 import os
 import json
+import time
 from datetime import datetime
 from playwright.sync_api import sync_playwright
 import firebase_admin
@@ -28,27 +29,32 @@ def scrape_dsex():
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
         )
         page = context.new_page()
-        page.set_default_timeout(45000) 
+        page.set_default_timeout(60000)
         
         print("Navigating to DSE website...")
         try:
             page.goto("https://www.dsebd.org/", wait_until="domcontentloaded")
             
-            # একাধিক এলিমেন্টের ঝামেলা এড়াতে সুনির্দিষ্ট টেবিল ও ক্লাস টার্গেট করা হয়েছে
-            # ডিএসই-র লেটেস্ট হোমপেজের "Latest Share Price" টেবিলের DSEX রো সিলেক্ট করা হচ্ছে
-            target_selector = "table.table-striped >> text='DSEX'"
-            page.wait_for_selector(target_selector, timeout=25000)
+            # পেজের প্রথম মূল টেবিলটির লোড হওয়া পর্যন্ত অপেক্ষা করা
+            page.wait_for_selector("table", timeout=30000)
+            time.sleep(3) # ডেটা রেন্ডার হওয়ার জন্য ছোট বিরতি
             
-            # নিখুঁতভাবে শুধু ওই টেবিলের ডানপাশের ভ্যালুটি রিড করার জন্য শক্তিশালী XPath
-            dsex_value_text = page.locator("//table[contains(@class,'table')]//td[normalize-space()='DSEX']/following-sibling::td[1]").inner_text()
+            # প্রথম টেবিলের (index 0) ভেতরের DSEX লেখার ঠিক পরের td (ভ্যালু)-কে টার্গেট করা
+            # এই XPath শুধুমাত্র প্রথম টেবিলে থাকা DSEX-এর মানটিই নেবে
+            first_table_dsex_xpath = "(//table)[1]//td[normalize-space()='DSEX']/following-sibling::td[1]"
+            
+            page.wait_for_selector(first_table_dsex_xpath, state="visible", timeout=20000)
+            
+            dsex_value_text = page.locator(first_table_dsex_xpath).inner_text()
+            print(f"Raw text found in first table: {dsex_value_text}")
             
             dsex_value = float(dsex_value_text.replace(',', '').strip())
-            print(f"Successfully scraped DSEX Index: {dsex_value}")
+            print(f"Successfully scraped DSEX Index from first table: {dsex_value}")
             browser.close()
             return dsex_value
             
         except Exception as e:
-            print(f"Scraping failed to find DSEX: {e}")
+            print(f"Scraping failed to find DSEX in first table: {e}")
             browser.close()
             return None
 
