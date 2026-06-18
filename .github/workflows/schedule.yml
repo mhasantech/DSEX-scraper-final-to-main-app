@@ -17,7 +17,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          cache: 'npm'
+          # এখানে থাকা cache অপশনটি বাদ দেওয়া হয়েছে যাতে লক ফাইল না খোঁজে
 
       - name: Install Dependencies
         run: npm install
