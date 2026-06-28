@@ -3,7 +3,7 @@ name: Daily DSE Scraper to Firebase
 on:
   schedule:
     # প্রতিদিন বাংলাদেশ সময় বিকেল ৪:০০ টায় রান হবে (UTC সকাল ১০:০০ টা)
-    - cron: '0 10 * * *'
+    - cron: '0 8 * * *'
   workflow_dispatch: # হাত দিয়ে যেকোনো সময় টেস্ট করার জন্য
 
 jobs:
